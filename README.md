@@ -94,7 +94,9 @@ This Python script reads sensor data from multiple serial ports, parses it, and 
 - `serial`: For reading data from serial ports.
 - `mysql.connector`: For connecting to and interacting with a MySQL database.
 - `threading`: For running multiple threads.
-- `time`: For handling timing operations.
+- `os`, `subprocess`, `shutil` and `zipfile`: For managing local files and processes.
+- `pandas`: For Excel writing.
+- `dotenv`: For Unifying managing .env files for security.
 
 #### Functions:
 1. **insert_sensor_data(cursor, temperature, ec, ph, do, level)**:
@@ -116,6 +118,17 @@ This Python script reads sensor data from multiple serial ports, parses it, and 
    - Connects to the MySQL database.
    - Continuously reads lines from the serial port, parses them, and inserts the parsed data into the database.
    - Handles connection and parsing errors, ensuring the database connection is closed properly.
+3. **update_excel_copy(temp, ec, ph, do, level)**:
+   - Updates a local excel file with the same data as the local database.
+   - If a OneDrive client is connected, synchronizes a local excel file, to connected OneDrive client
+   - Parameters: 
+     - `temperature`: Temperature reading.
+     - `ec`: Electrical conductivity reading.
+     - `ph`: pH reading.
+     - `do`: Dissolved oxygen reading.
+     - `level`: Level identifier for the data. 
+   - This solution is to make it easier to access data, even without going into the lab.
+   - Makes reacting to anything strange quicker if there's a need for that.
 
 #### Workflow:
 1. **Initialization**:
@@ -129,6 +142,7 @@ This Python script reads sensor data from multiple serial ports, parses it, and 
    - Parse the data into temperature, EC, pH, and DO values.
    - Insert the parsed data into the MySQL database using the `insert_sensor_data` function.
    - Commit the transaction to save the data in the database.
+   - Insert the parsed data into excel file database using the `update_excel_copy` function.
    - Handle any errors that occur during data parsing or database insertion.
 
 3. **Multithreading**:
@@ -239,6 +253,17 @@ INSERT INTO Sensors (SystemID, SensorTypeID, Reading, Time) VALUES (1, 4, 8.6, N
 This structure ensures a normalized and efficient database design, allowing for the proper storage and retrieval of sensor data related to various systems and sensor types.
 ![image](IMAGES/database.bmp)
 
+## OneDrive
+As stated before, to access data from any device without going into the lab, a function is prepared maintaining file synchronization between a connected account and the Raspberry. However, to prepare that, there are a few steps that need to be taken in order for this solution to work
+
+First of all, Saxion does not allow any 3rd party apps to be used on their network for security reasons. So, a non-Saxion Microsoft account has to be created (it's free) in order to log in successfully to the OneDrive client.
+
+**Steps:**
+0. If you do not intend to use the solution, simply comment out the function responsible for uploading (see `functions`)
+1. In terminal on the raspberry, make sure no one is logged in, by using `onedrive --logout`
+2. Enter `onedrive` and then log in, following the displayed instructions.
+3. Recreate simple folder structure in your account that you logged in - in the root ("main" folder) of the OneDrive, create a `Database_Copy` folder. This can be done on any device, as it's probably easier to do so than on the raspberry web browser. 
+4. Script will handle file creation and upload once it's running and data has been collected.
 
 ## Dashboard
 > To configure grafana, go to configuration file `/etc/grafana/grafana.ini`
