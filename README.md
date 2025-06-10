@@ -36,7 +36,7 @@ The code for the Arduino Nano's is uniform. They all operate with the same code.
 ## The Arduino Code ([HydrophonicSystemSensorCode.ino](https://github.com/Norandos/PLANT/blob/main/HydrophonicSystemSensorCode/HydrophonicSystemSensorCode.ino)
 This code is designed to measure and report pH, electrical conductivity (EC), temperature, and dissolved oxygen (DO) levels using various sensors. The program initializes and reads data from these sensors, performing necessary calibrations and compensation for accurate measurements. The results are printed in a CSV format to the serial monitor at regular intervals.
 
-If one wants to change the code, one has to simply make changes to the code and then use an IDE (Like Arduino IDE) to upload hte code to an arduino. through the micro-USB cable. (So either with the Raspberry or through your own device)
+If one wants to change the code, one has to simply make changes to the code and then use an IDE (Like Arduino IDE) to upload the code to an arduino through the micro-USB cable. (So either with the Raspberry or through your own device)
 
 #### Hardware and Libraries:
 - **Libraries**:
@@ -50,6 +50,12 @@ If one wants to change the code, one has to simply make changes to the code and 
   - `OX_PIN (A4)`: Dissolved oxygen sensor input.
   - `ONE_WIRE_BUS (4)`: Temperature sensor data line.
 
+To use the arduinos as a lighting and pumps controller as well, a skeleton of the code was prepared, with
+- `pumpPins[]` 
+- `lightPins[]`
+
+Respectively, which are used to determine, on which pins should the arduino give power, to turn on the lights/pumps.
+
 #### Key Definitions:
 - **Voltage Reference (VREF)**: 5000mV.
 - **ADC Resolution (ADC_RES)**: 1024.
@@ -60,18 +66,23 @@ If one wants to change the code, one has to simply make changes to the code and 
 
 #### Workflow:
 1. **Initialization**:
-   - Serial communication starts at 9600 baud.
    - Sensors are initialized.
+   - Serial communication starts at 9600 baud.
 
 2. **Loop**:
-   - Reads sensor values:
-     - `getpH()`: Reads and compensates pH value.
-     - `getEc()`: Reads and compensates EC value.
-     - `getTempSensor()`: Reads temperature value.
-     - `getOxygenSensor()`: Reads and compensates DO value.
-   - Skips the first reading to avoid faulty data.
-   - Prints the sensor data in CSV format to the serial monitor.
-   - Waits for 30 minutes before the next reading (blocking delay).
+   - Calculates current time (using millis(), based on arduino uptime)
+   - Checks, whether or not, to turn on/off the lights/water pumps.
+   - Checkes if measurements should be performed, if so: 
+      - Reads sensor values:
+         - Skips the first reading to avoid faulty data.
+         - `getpH()`: Reads and compensates pH value.
+         - `getEc()`: Reads and compensates EC value.
+         - `getTempSensor()`: Reads temperature value.
+         - `getOxygenSensor()`: Reads and compensates DO value.
+      - Prints the sensor data in CSV format to the serial monitor.
+      - Waits for 1 minute before the next loop (blocking delay).
+
+**Important Notice** - `millis()` is a built-in function, which will overflow it's value after approximately 50 days of arduino uptime. However, this is not expected to affect system behavior due to regular lab visits and resets. Even if that was to happen, the resulting "time reset" will not affect the system operations.
 
 #### Functions:
 - **getEc()**: Measures EC, compensates with temperature.
@@ -79,6 +90,18 @@ If one wants to change the code, one has to simply make changes to the code and 
 - **getTempSensor()**: Reads temperature using the Dallas temperature sensor.
 - **getOxygenSensor()**: Measures dissolved oxygen concentration, converts ADC voltage to DO concentration.
 - **readDO(voltage_mv, temperature_c)**: Calculates DO concentration based on voltage and temperature, supporting two-point calibration.
+
+#### Constants:
+- Non User-Defined:
+   - **int** `hourOfDay` and **int** `minuteOfHour` - for storing time (automatic).
+- User-Defined
+   - `PUMP1_START_HOUR` - Define hour, at which the pumps should start working.
+   - `PUMP2_START_HOUR` - Define second hour, at which the pumps should start working.
+   - `PUMP_DURATION_MINUTES` - Define how long should the pumps be working for (<60, advised 30).
+   - `LIGHT_START_HOUR` - Define hour, at which the lights should start working.
+   - `LIGHT_END_HOUR` - Define hour, at which the lights should stop working.
+
+Example configuration is already defined for all of those, yet feel free to change those, if observations would conclude so. 
 
 ## Python Code (DataParsing.py)
 > The code is run under PLANT/home/DataParsing.py
