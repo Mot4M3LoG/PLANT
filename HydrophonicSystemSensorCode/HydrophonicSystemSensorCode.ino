@@ -34,7 +34,6 @@ uint8_t Temperature; // not needed
 uint16_t ADC_Raw;
 uint16_t ADC_Voltage;
 uint16_t doValue;
-RTC_DS3231 rtc;
 
 const uint16_t DO_Table[41] = {
     14460, 14220, 13820, 13440, 13090, 12740, 12420, 12110, 11810, 11530,
@@ -76,10 +75,6 @@ void loop() {
 
     hourOfDay = (elapsedMillis / 60) % 24; // Hours (0-23)
     minuteOfHour = elapsedMillis % 60; // Minutes (0-59)
-
-    Serial.print("Hour: "); Serial.print(hourOfDay);
-    Serial.print(", Minute: "); Serial.println(minuteOfHour);
-    Serial.println("TESTLoop");
 
     // --- Pump Control Logic ---
     bool inFirstWindow  = hourOfDay == PUMP1_START_HOUR  && minuteOfHour < PUMP_DURATION_MINUTES;
